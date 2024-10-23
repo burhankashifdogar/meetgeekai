@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 import warnings
 import requests
 import urllib3
+from pydub import AudioSegment  # To split audio into chunks
 
 # Disable SSL warnings
 warnings.filterwarnings("ignore", category=urllib3.exceptions.InsecureRequestWarning)
@@ -31,7 +32,6 @@ session.mount("https://", SSLAdapter())
 def load_model_with_ssl(model_size):
     try:
         st.info(f"Loading Whisper model: {model_size}")
-        # Disable SSL verification in requests temporarily
         model = whisper.load_model(model_size)
         return model
     except Exception as e:
@@ -50,52 +50,85 @@ def extract_audio(video_path):
 
     return audio_path
 
-# Helper function to transcribe video
-def transcribe_video(video_path, model_size="base", language=None):
-    progress_bar = st.progress(0)
+# Split audio into chunks
+def split_audio(audio_path, chunk_duration=30):
+    audio = AudioSegment.from_wav(audio_path)
+    audio_chunks = []
+    
+    # Split audio into chunks of `chunk_duration` seconds
+    for i in range(0, len(audio), chunk_duration * 1000):
+        audio_chunks.append(audio[i:i + chunk_duration * 1000])
+
+    return audio_chunks
+
+# Helper function to transcribe video in chunks
+def transcribe_video(video_path, model_size="base", language=None, chunk_duration=30):
     st.subheader("Step 1: Extracting Audio")
 
-    # Update progress for audio extraction (30% complete)
+    # Show and update the progress bar for audio extraction
+    progress_audio = st.progress(0)
     audio_path = extract_audio(video_path)
-    progress_bar.progress(30)
+    progress_audio.progress(100)  # Complete audio extraction
 
     if not audio_path:
         return None
 
-    device = torch.device("cpu")
-    st.info("Using CPU for inference due to limited MPS support on M1/M2.")
 
     st.subheader("Step 2: Loading Whisper Model")
     
-    # Update progress for model loading (50% complete)
+    # Show and update the progress bar for model loading
+    progress_model = st.progress(0)
     model = load_model_with_ssl(model_size)
-    progress_bar.progress(50)
+    progress_model.progress(100)  # Complete model loading
 
     if not model:
         return None
 
     st.subheader("Step 3: Transcribing Audio")
 
-    # Add progress for transcription (70% at the start)
-    with st.spinner("Transcribing audio... This may take a while depending on the length of the video."):
+    # Split audio into chunks and show progress for transcription
+    audio_chunks = split_audio(audio_path, chunk_duration)
+    total_chunks = len(audio_chunks)
+    
+    progress_transcription = st.progress(0)
+    transcription_result = ""
+
+    # Placeholder for updating only the chunk progress number
+    chunk_progress_placeholder = st.empty()
+
+    # Transcribe each chunk and update progress
+    for idx, chunk in enumerate(audio_chunks):
+        # Export chunk to temporary file
+        chunk_path = f"chunk_{idx}.wav"
+        chunk.export(chunk_path, format="wav")
+
+        # Update the spinner with current chunk number
+        chunk_progress_placeholder.text(f"Transcribing chunk {idx + 1}/{total_chunks}...")
+
+        # Transcribe the chunk
         try:
-            result = model.transcribe(audio_path, language=language)
-            progress_bar.progress(90)  # Update progress after transcription
+            result = model.transcribe(chunk_path, language=language)
+            transcription_result += result["text"] + " "
+
+            # Clean up chunk file
+            os.remove(chunk_path)
         except Exception as e:
             st.error(f"Error during transcription: {str(e)}")
             return None
-        finally:
-            os.remove(audio_path)
 
-    # Final step (100% complete)
-    progress_bar.progress(100)
-    return result["text"]
+        # Update progress bar based on the chunk completion
+        progress_transcription.progress((idx + 1) / total_chunks)
+
+    # Remove the original audio file
+    os.remove(audio_path)
+
+    return transcription_result
 
 # Streamlit app layout
-st.title("Video to Text Transcription App")
+st.title("🎥 Video to Text Transcription App")
 st.write("Upload a video file to extract and transcribe its audio.")
 
-uploaded_file = st.file_uploader("Choose a video file (max 1 GB)", type=["mp4", "mov", "avi", "mkv"])
+uploaded_file = st.file_uploader("🎬 Choose a video file (max 1 GB)", type=["mp4", "mov", "avi", "mkv"])
 
 if uploaded_file:
     max_size_mb = 500
@@ -118,16 +151,25 @@ if uploaded_file:
         )
 
         language = st.text_input(
-            "Language code (optional)",
+            "🌍 Language code (optional)",
             help="Provide a language code (e.g., 'en' for English, 'es' for Spanish) or leave empty to auto-detect."
         )
 
-        if st.button("Start Transcription"):
-            transcription = transcribe_video(video_path, model_size=model_size, language=language or None)
+        # Adding a heading with an emoji and description for the slider
+        st.subheader("🎛️ Adjust Chunk Duration")
+
+        # Create a visually appealing slider with custom emojis
+        chunk_duration = st.slider(
+            "⏳ Chunk duration (in seconds)", min_value=10, max_value=60, value=30,
+            help="Set the duration of each audio chunk to transcribe. Longer chunks might take more time to process, but fewer chunks to transcribe."
+        )
+
+        if st.button("⚙️ Start Transcription"):
+            transcription = transcribe_video(video_path, model_size=model_size, language=language or None, chunk_duration=chunk_duration)
 
             if transcription:
-                st.subheader("Step 4: Displaying Transcription")
+                st.subheader("📜 Transcription Result")
                 st.write(transcription)
-                st.download_button("Download Transcription", transcription, file_name="transcription.txt")
+                st.download_button("💾 Download Transcription", transcription, file_name="transcription.txt")
 
             os.remove(video_path)
