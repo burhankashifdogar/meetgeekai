@@ -1,4 +1,3 @@
-
 import streamlit as st
 import moviepy.editor as mp
 import whisper
@@ -14,7 +13,6 @@ import urllib3
 # Disable SSL warnings
 warnings.filterwarnings("ignore", category=urllib3.exceptions.InsecureRequestWarning)
 requests.packages.urllib3.disable_warnings()
-
 
 # Automatically set up SSL context for secure HTTPS connections
 ssl_context = ssl.create_default_context()
@@ -54,31 +52,43 @@ def extract_audio(video_path):
 
 # Helper function to transcribe video
 def transcribe_video(video_path, model_size="base", language=None):
+    progress_bar = st.progress(0)
     st.subheader("Step 1: Extracting Audio")
 
+    # Update progress for audio extraction (30% complete)
     audio_path = extract_audio(video_path)
+    progress_bar.progress(30)
+
     if not audio_path:
         return None
 
     device = torch.device("cpu")
     st.info("Using CPU for inference due to limited MPS support on M1/M2.")
 
-    st.subheader("Step 2: Transcribing Audio")
-
+    st.subheader("Step 2: Loading Whisper Model")
+    
+    # Update progress for model loading (50% complete)
     model = load_model_with_ssl(model_size)
+    progress_bar.progress(50)
+
     if not model:
         return None
 
-    # Add spinner while the transcription is taking place
+    st.subheader("Step 3: Transcribing Audio")
+
+    # Add progress for transcription (70% at the start)
     with st.spinner("Transcribing audio... This may take a while depending on the length of the video."):
         try:
             result = model.transcribe(audio_path, language=language)
+            progress_bar.progress(90)  # Update progress after transcription
         except Exception as e:
             st.error(f"Error during transcription: {str(e)}")
             return None
         finally:
             os.remove(audio_path)
 
+    # Final step (100% complete)
+    progress_bar.progress(100)
     return result["text"]
 
 # Streamlit app layout
@@ -116,7 +126,7 @@ if uploaded_file:
             transcription = transcribe_video(video_path, model_size=model_size, language=language or None)
 
             if transcription:
-                st.subheader("Step 3: Displaying Transcription")
+                st.subheader("Step 4: Displaying Transcription")
                 st.write(transcription)
                 st.download_button("Download Transcription", transcription, file_name="transcription.txt")
 
