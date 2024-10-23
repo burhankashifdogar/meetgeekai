@@ -1,0 +1,6 @@
+ffmpeg-python
+streamlit
+torch
+moviepy
+requests
+git+https://github.com/openai/whisper.git
