@@ -22,8 +22,12 @@ To run the app locally, follow these steps:
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/Franky1/Streamlit-ffmpeg-Test
-   git clone https://github.com/burhankashifdogar/meetgeekai.git
    cd Streamlit-ffmpeg-Test
+   ```
+   ```bash
+   git clone https://github.com/burhankashifdogar/meetgeekai
+   cd meetgeekai
+
 2. **Create a Virtual Environment**:
     ```bash
     python -m venv venv
