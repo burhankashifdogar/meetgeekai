@@ -1,5 +1,6 @@
 ffmpeg-python
 streamlit
+pydub
 torch
 moviepy
 requests
