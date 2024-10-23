@@ -65,8 +65,13 @@ def split_audio(audio_path, chunk_duration=30):
 def transcribe_video(video_path, model_size="base", language=None, chunk_duration=30):
     st.subheader("Step 1: Extracting Audio")
 
-    # Show and update the progress bar for audio extraction
     progress_audio = st.progress(0)
+    time.sleep(0.5)
+    progress_audio.progress(20)
+    time.sleep(0.5)
+    progress_audio.progress(40)
+    time.sleep(0.5)
+    progress_audio.progress(80)
     audio_path = extract_audio(video_path)
     progress_audio.progress(100)  # Complete audio extraction
 
@@ -78,8 +83,14 @@ def transcribe_video(video_path, model_size="base", language=None, chunk_duratio
     
     # Show and update the progress bar for model loading
     progress_model = st.progress(0)
+    time.sleep(0.5)
+    progress_model.progress(20)
+    time.sleep(0.5)
+    progress_model.progress(40)
+    time.sleep(0.5)
+    progress_model.progress(80)
     model = load_model_with_ssl(model_size)
-    progress_model.progress(100)  # Complete model loading
+    progress_model.progress(100)  # Complete model loading  # Complete model loading
 
     if not model:
         return None
