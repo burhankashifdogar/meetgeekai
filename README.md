@@ -3,7 +3,6 @@
 This is a **Streamlit** app that extracts audio from a video file and transcribes it into text using **OpenAI's Whisper model**. You can upload video files, choose different Whisper model sizes, and adjust the chunk duration for transcription. The app supports multiple languages, and you can specify a language code for transcription or let the app detect it automatically.
 
 [![Open in Streamlit Cloud](https://img.shields.io/badge/Open%20in-Streamlit%20Cloud-F24747?logo=streamlit)](https://meetgeekai.streamlit.app) 
-![License](https://img.shields.io/github/license/Franky1/Streamlit-ffmpeg-Test?logo=github) 
 ![Language](https://img.shields.io/github/languages/top/Franky1/Streamlit-ffmpeg-Test?logo=python) 
 ![Python Version](https://img.shields.io/badge/Python-3.7%20|%203.8%20|%203.9-blue?logo=python) 
 
