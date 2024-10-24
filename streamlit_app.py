@@ -1,7 +1,6 @@
 import streamlit as st
 import moviepy.editor as mp
 import whisper
-import torch
 import requests
 import ssl
 import os
