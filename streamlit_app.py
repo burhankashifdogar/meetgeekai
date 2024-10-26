@@ -156,7 +156,7 @@ if uploaded_file:
 
         model_size = st.selectbox(
             "Select Whisper model size:",
-            ["tiny", "base", "small"],
+            ["tiny", "base", "small", "medium", "large"],
             index=1,
             help="Larger models offer higher accuracy but may take longer to process."
         )
